@@ -49,12 +49,18 @@ public interface IMappingBuilder {
 
     public interface IMethod {
         IParameter parameter(int index, String... names);
+        ILvtMember lvtMember(int index, String... names);
         IMethod meta(String key, String value);
         IClass build();
     }
 
     public interface IParameter {
         IParameter meta(String key, String value);
+        IMethod build();
+    }
+
+    public interface ILvtMember {
+        ILvtMember meta(String key, String value);
         IMethod build();
     }
 }

@@ -118,6 +118,11 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
                     lines.add(par.write(format, indexes));
                     writeMeta(format, lines, PARAMETER, par.meta);
                 });
+
+                mtd.getLvt().sorted((a,b) -> a.getIndex() - b.getIndex()).forEachOrdered(lvt -> {
+                    lines.add(lvt.write(format, indexes));
+                    writeMeta(format, lines, LVT, lvt.meta);
+                });
             });
         });
 
@@ -418,6 +423,7 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
         class Method extends Named implements IMappingBuilder.IMethod {
             private final String desc;
             private final Map<Integer, Parameter> params = new HashMap<>();
+            private final Map<Integer, LvtMember> lvt = new HashMap<>();
             final Map<String, String> meta = new LinkedHashMap<>();
 
             Method(String desc, String... names) {
@@ -429,6 +435,12 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
             public IParameter parameter(int index, String... names) {
                 ensureCount(names);
                 return retPut(this.params, index, new Parameter(index, names));
+            }
+
+            @Override
+            public ILvtMember lvtMember(int index, String... names) {
+                ensureCount(names);
+                return retPut(this.lvt, index, new LvtMember(index, names));
             }
 
             @Override
@@ -448,6 +460,10 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
 
             Stream<Parameter> getParameters() {
                 return this.params.values().stream();
+            }
+
+            Stream<LvtMember> getLvt() {
+                return this.lvt.values().stream();
             }
 
             @Override
@@ -506,8 +522,8 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
                         case CSRG:
                         case TSRG:
                         case PG:
+                        case TINY:
                         case TINY1: return null;
-                        case TINY: return "\t\tp\t" + getIndex() + getNames(order);
                         case TSRG2: return getTsrg2(order);
                         default: throw new UnsupportedOperationException("Unknown format: " + format);
                     }
@@ -523,6 +539,45 @@ class NamedMappingFile implements INamedMappingFile, IMappingBuilder {
 
                 @Override
                 public IParameter meta(String key, String value) {
+                    this.meta.put(key, value);
+                    return this;
+                }
+
+                @Override
+                public IMethod build() {
+                    return Method.this;
+                }
+            }
+            class LvtMember extends Named implements IMappingBuilder.ILvtMember {
+                private final int index;
+                final Map<String, String> meta = new LinkedHashMap<>();
+
+                LvtMember(int index, String... names) {
+                    super(names);
+                    this.index = index;
+                }
+
+                public int getIndex() {
+                    return this.index;
+                }
+
+                @Override
+                String write(Format format, int... order) {
+                    switch (format) {
+                        case SRG:
+                        case XSRG:
+                        case CSRG:
+                        case TSRG:
+                        case PG:
+                        case TSRG2:
+                        case TINY1: return null;
+                        case TINY: return "\t\tp\t" + getIndex() + getNames(order);
+                        default: throw new UnsupportedOperationException("Unknown format: " + format);
+                    }
+                }
+
+                @Override
+                public ILvtMember meta(String key, String value) {
                     this.meta.put(key, value);
                     return this;
                 }

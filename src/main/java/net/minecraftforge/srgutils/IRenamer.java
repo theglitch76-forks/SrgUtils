@@ -45,4 +45,8 @@ public interface IRenamer {
     default String rename(IParameter value) {
         return value.getMapped();
     }
+
+    default String rename(IMappingFile.ILvtMember value) {
+        return value.getMapped();
+    }
 }

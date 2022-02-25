@@ -148,9 +148,14 @@ class MappingFile implements IMappingFile {
                 lines.add(mtd.write(format, reversed));
                 writeMeta(format, lines, METHOD, mtd.getMetadata());
 
-                mtd.getParameters().stream().sorted((a,b) -> a.getIndex() - b.getIndex()).forEachOrdered(par -> {
+                mtd.getParameters().stream().sorted((a, b) -> a.getIndex() - b.getIndex()).forEachOrdered(par -> {
                     lines.add(par.write(format, reversed));
                     writeMeta(format, lines, PARAMETER, par.getMetadata());
+                });
+
+                mtd.getLvt().stream().sorted((a, b) -> a.getIndex() - b.getIndex()).forEachOrdered(lvt -> {
+                    lines.add(lvt.write(format, reversed));
+                    writeMeta(format, lines, LVT, lvt.getMetadata());
                 });
             });
         });
@@ -235,6 +240,12 @@ class MappingFile implements IMappingFile {
                 IClass cls = link.getClass(mtd.getParent().getMapped());
                 mtd = cls == null ? null : cls.getMethod(mtd.getMapped(), mtd.getMappedDescriptor());
                 return mtd == null ? value.getMapped() : mtd.remapParameter(value.getIndex(), value.getMapped());
+            }
+            public String rename(ILvtMember value) {
+                IMethod mtd = value.getParent();
+                IClass cls = link.getClass(mtd.getParent().getMapped());
+                mtd = cls == null ? null : cls.getMethod(mtd.getMapped(), mtd.getMappedDescriptor());
+                return mtd == null ? value.getMapped() : mtd.remapLvtMember(value.getIndex(), value.getMapped());
             }
         });
     }
@@ -435,7 +446,8 @@ class MappingFile implements IMappingFile {
             private final String desc;
             private final Map<Integer, Parameter> params = new HashMap<>();
             private final Collection<Parameter> paramsView = Collections.unmodifiableCollection(params.values());
-
+            private final Map<Integer, LvtMember> lvt = new HashMap<>();
+            private final Collection<LvtMember> lvtView = Collections.unmodifiableCollection(lvt.values());
             private Method(String original, String desc, String mapped, Map<String, String> metadata) {
                 super(original, mapped, metadata);
                 this.desc = desc;
@@ -455,6 +467,11 @@ class MappingFile implements IMappingFile {
                 return this.paramsView;
             }
 
+            @Override
+            public Collection<? extends ILvtMember> getLvt() {
+                return lvtView;
+            }
+
             private Parameter addParameter(int index, String original, String mapped, Map<String, String> metadata) {
                 return retPut(this.params, index, new Parameter(index, original, mapped, metadata));
             }
@@ -463,6 +480,12 @@ class MappingFile implements IMappingFile {
             public String remapParameter(int index, String name) {
                 Parameter param = this.params.get(index);
                 return param == null ? name : param.getMapped();
+            }
+
+            @Override
+            public String remapLvtMember(int index, String name) {
+                LvtMember lvt = this.lvt.get(index);
+                return lvt == null ? name : lvt.getMapped();
             }
 
             @Override
@@ -524,9 +547,42 @@ class MappingFile implements IMappingFile {
                         case CSRG:
                         case TSRG:
                         case PG:
+                        case TINY:
+                        case TINY1: return null;
+                        case TSRG2: return "\t\t" + getIndex() + ' ' + oName + ' ' + mName;
+                        default: throw new UnsupportedOperationException("Unknown format: " + format);
+                    }
+                }
+
+            }
+
+            class LvtMember extends Node implements ILvtMember {
+                private final int index;
+                protected LvtMember(int index, String original, String mapped, Map<String, String> metadata) {
+                    super(original, mapped, metadata);
+                    this.index = index;
+                }
+                @Override
+                public IMethod getParent() {
+                    return Method.this;
+                }
+                @Override
+                public int getIndex() {
+                    return this.index;
+                }
+                @Override
+                public String write(Format format, boolean reversed) {
+                    String oName = !reversed ? getOriginal() : getMapped();
+                    String mName = !reversed ? getMapped() : getOriginal();
+                    switch (format) {
+                        case SRG:
+                        case XSRG:
+                        case CSRG:
+                        case TSRG:
+                        case TSRG2:
+                        case PG:
                         case TINY1: return null;
                         case TINY: return "\t\tp\t" + getIndex() + '\t' + oName + '\t' + mName;
-                        case TSRG2: return "\t\t" + getIndex() + ' ' + oName + ' ' + mName;
                         default: throw new UnsupportedOperationException("Unknown format: " + format);
                     }
                 }

@@ -372,7 +372,7 @@ class InternalUtils {
         IMappingBuilder.IClass cls = null;
         IMappingBuilder.IField field = null;
         IMappingBuilder.IMethod method = null;
-        IMappingBuilder.IParameter param = null;
+        IMappingBuilder.ILvtMember param = null;
 
         for (int x = start; x < lines.size(); x++) {
             String line = lines.get(x);
@@ -451,11 +451,12 @@ class InternalUtils {
 
                     break;
 
-                case "p": // Parameters: p index Name1 Name2 Name3
+                // Tiny parameters use LVT indexes
+                case "p": // "Parameters": p index Name1 Name2 Name3
                     if (parts.length != nameCount + 2 || stack.peek() != TinyV2State.METHOD)
                         throw tiny2Exception(x, line);
 
-                    param = method.parameter(Integer.parseInt(parts[1]), Arrays.copyOfRange(parts, 2, parts.length));
+                    param = method.lvtMember(Integer.parseInt(parts[1]), Arrays.copyOfRange(parts, 2, parts.length));
                     stack.push(TinyV2State.PARAMETER);
 
                     break;
@@ -644,7 +645,7 @@ class InternalUtils {
         return ret;
     }
 
-    enum Element{ PACKAGE, CLASS, FIELD, METHOD, PARAMETER }
+    enum Element{ PACKAGE, CLASS, FIELD, METHOD, PARAMETER, LVT }
     static void writeMeta(Format format, List<String> lines, Element element, Map<String, String> meta) {
         int indent = 0;
         switch (element) {
@@ -652,6 +653,7 @@ class InternalUtils {
             case CLASS:     indent = 1; break;
             case FIELD:
             case METHOD:    indent = 2; break;
+            case LVT:
             case PARAMETER: indent = 3; break;
         }
 

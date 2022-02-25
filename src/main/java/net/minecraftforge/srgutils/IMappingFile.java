@@ -151,10 +151,15 @@ public interface IMappingFile {
         String getDescriptor();
         String getMappedDescriptor();
         Collection<? extends IParameter> getParameters();
+        Collection<? extends ILvtMember> getLvt();
         String remapParameter(int index, String name);
+        String remapLvtMember(int index, String name);
     }
 
     public interface IParameter extends IOwnedNode<IMethod> {
+        int getIndex();
+    }
+    public interface ILvtMember extends IOwnedNode<IMethod> {
         int getIndex();
     }
 }

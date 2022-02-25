@@ -93,7 +93,7 @@ public class MappingTest {
         assertEquals("Method Comment", mtd.getMetadata().get("comment"));
         assertNotNull(mtd.getParameters(), "Missing parameter collection");
 
-        IMappingFile.IParameter par = mtd.getParameters().iterator().next();
+        IMappingFile.ILvtMember par = mtd.getLvt().iterator().next();
         assertNotNull(par, "Missing Parameter");
         assertEquals("Param Comment", par.getMetadata().get("comment"));
     }
